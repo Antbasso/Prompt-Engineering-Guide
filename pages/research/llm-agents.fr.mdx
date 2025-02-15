@@ -1,3 +1,180 @@
-# LLM Agents
+# Agents LLM
 
-This page needs a translation! Feel free to contribute a translation by clicking the `Edit this page` button on the right.
+import {Cards, Card} from 'nextra-theme-docs'
+import { Callout } from 'nextra/components'
+import {FilesIcon} from 'components/icons'
+
+Les agents basés sur les LLM, également appelés agents LLM, impliquent des applications LLM capables d'exécuter des tâches complexes grâce à une architecture combinant des LLM avec des modules clés tels que la planification et la mémoire. Lors de la construction d'agents LLM, un LLM sert de contrôleur principal ou "cerveau" qui gère un flux d'opérations nécessaires pour accomplir une tâche ou une requête utilisateur. L'agent LLM peut nécessiter des modules clés tels que la planification, la mémoire et l'utilisation d'outils.
+
+Pour mieux motiver l'utilité d'un agent LLM, supposons que nous souhaitions construire un système capable de répondre à la question suivante :
+
+> Quelle est la consommation calorique quotidienne moyenne pour 2023 aux États-Unis ?
+
+La question ci-dessus pourrait potentiellement être répondue en utilisant un LLM qui possède déjà les connaissances nécessaires pour répondre directement à la question. Si le LLM ne dispose pas des connaissances pertinentes pour répondre à la question, il est possible d'utiliser un système RAG simple où un LLM a accès à des informations ou des rapports liés à la santé. Maintenant, donnons au système une question plus complexe comme celle-ci :
+
+> Comment la tendance de la consommation calorique quotidienne moyenne parmi les adultes a-t-elle évolué au cours de la dernière décennie aux États-Unis, et quel impact cela pourrait-il avoir sur les taux d'obésité ? De plus, pouvez-vous fournir une représentation graphique de la tendance des taux d'obésité sur cette période ?
+
+Pour répondre à une telle question, utiliser uniquement un LLM ne serait pas suffisant. Vous pouvez combiner le LLM avec une base de connaissances externe pour former un système RAG, mais cela ne serait probablement pas suffisant pour répondre à la requête complexe ci-dessus. En effet, la question complexe ci-dessus nécessite qu'un LLM décompose la tâche en sous-parties pouvant être traitées à l'aide d'outils et d'un flux d'opérations menant à une réponse finale souhaitée. Une solution possible consiste à construire un agent LLM ayant accès à une API de recherche, à des publications liées à la santé et à une base de données de santé publique/privée pour fournir des informations pertinentes sur la consommation calorique et l'obésité.
+
+De plus, le LLM devra accéder à un outil "interpréteur de code" qui aide à transformer les données pertinentes en graphiques utiles pour comprendre les tendances de l'obésité. Ce sont les composants de haut niveau possibles de l'agent LLM hypothétique, mais il y a encore des considérations importantes telles que la création d'un plan pour traiter la tâche et un accès potentiel à un module de mémoire qui aide l'agent à suivre l'état du flux d'opérations, les observations et l'avancement global.
+
+<Callout type= "info" emoji="🎓">
+En savoir plus sur les agents basés sur les LLM et les méthodes d'invite avancées dans nos nouveaux cours d'IA. [Rejoignez-nous maintenant !](https://dair-ai.thinkific.com/)
+
+Utilisez le code PROMPTING20 pour bénéficier de 20 % de réduction supplémentaire.
+</Callout>
+
+## Cadre des Agents LLM
+
+!["Cadre des Agents LLM"](../../img/agents/agent-framework.png)
+
+En général, un cadre d'agent LLM peut se composer des composants principaux suivants :
+
+- Requête Utilisateur - une question ou une requête d'utilisateur
+- Agent/Cerveau - le cœur de l'agent agissant comme coordinateur
+- Planification - aide l'agent à planifier les actions futures
+- Mémoire - gère les comportements passés de l'agent
+
+### Agent
+
+Un grand modèle de langage (LLM) avec des capacités polyvalentes sert de cerveau principal, de module agent ou de coordinateur du système. Ce composant sera activé à l'aide d'un modèle d'invite contenant des détails importants sur le fonctionnement de l'agent et les outils auxquels il aura accès (ainsi que les détails des outils).
+
+Bien que ce ne soit pas obligatoire, un agent peut être profilé ou se voir attribuer une personnalité pour définir son rôle. Ces informations de profilage sont généralement écrites dans l'invite, qui peut inclure des détails spécifiques tels que les détails du rôle, la personnalité, les informations sociales et d'autres informations démographiques. Selon [Wang et al. 2023], les stratégies pour définir un profil d'agent incluent l'artisanat manuel, la génération par LLM ou l'approche basée sur les données.
+
+### Planification
+
+#### Planification Sans Retour
+
+Le module de planification aide à décomposer les étapes ou sous-tâches nécessaires que l'agent résoudra individuellement pour répondre à la requête de l'utilisateur. Cette étape est importante pour permettre à l'agent de mieux raisonner sur le problème et de trouver une solution de manière fiable. Le module de planification utilisera un LLM pour décomposer un plan détaillé incluant des sous-tâches pour aider à répondre à la question de l'utilisateur. Les techniques populaires de décomposition des tâches incluent la [Chaîne de Pensée](https://www.promptingguide.ai/techniques/cot) et l'[Arbre de Pensées](https://www.promptingguide.ai/techniques/tot), qui peuvent être respectivement catégorisées comme raisonnement à chemin unique et raisonnement à chemins multiples. Voici une figure comparant différentes stratégies telles que formalisées dans [Wang et al., 2023](https://arxiv.org/abs/2308.11432) :
+
+!["Planification des Agents LLM"](../../img/agents/task-decomposition.png)
+
+#### Planification Avec Retour
+
+Les modules de planification ci-dessus n'impliquent aucun retour, ce qui rend difficile la réalisation d'une planification à long terme pour résoudre des tâches complexes. Pour relever ce défi, vous pouvez utiliser un mécanisme permettant au modèle de réfléchir et d'affiner de manière itérative le plan d'exécution en fonction des actions et observations passées. L'objectif est de corriger et d'améliorer les erreurs passées, ce qui aide à améliorer la qualité des résultats finaux. Cela est particulièrement important dans des environnements et des tâches complexes du monde réel où l'essai et l'erreur sont essentiels pour accomplir les tâches. Deux méthodes populaires pour ce mécanisme de réflexion ou de critique incluent [ReAct](https://www.promptingguide.ai/techniques/react) et [Reflexion](https://arxiv.org/abs/2303.11366).
+
+Par exemple, ReAct combine raisonnement et action visant à permettre à un LLM de résoudre des tâches complexes en alternant entre une série d'étapes (répétées N fois) : `Pensée`, `Action` et `Observation`. ReAct reçoit des retours de l'environnement sous forme d'observations. D'autres types de retours peuvent inclure des retours humains et des retours de modèles. La figure ci-dessous montre un exemple de ReAct et les différentes étapes impliquées dans la réalisation d'un question-réponse :
+
+!["Agent ReAct"](../../img/react.png)
+
+En savoir plus sur ReAct ici :
+
+<Cards>
+    <Card
+    icon={<FilesIcon />}
+    title="Invite ReAct"
+    href="https://www.promptingguide.ai/techniques/react"
+    />
+</Cards>
+
+### Mémoire
+
+Le module de mémoire aide à stocker les journaux internes de l'agent, y compris les pensées, actions et observations passées de l'environnement, ainsi que toutes les interactions entre l'agent et l'utilisateur. Il existe deux principaux types de mémoire rapportés dans la littérature sur les agents LLM :
+
+- **Mémoire à court terme** - inclut des informations contextuelles sur les situations actuelles de l'agent ; cela est généralement réalisé par l'apprentissage en contexte, ce qui signifie qu'elle est courte et finie en raison des contraintes de la fenêtre de contexte.
+- **Mémoire à long terme** - inclut les comportements et pensées passés de l'agent qui doivent être conservés et rappelés sur une période prolongée ; cela utilise souvent un magasin de vecteurs externe accessible par une récupération rapide et évolutive pour fournir des informations pertinentes à l'agent selon les besoins.
+
+La mémoire hybride intègre à la fois la mémoire à court terme et la mémoire à long terme pour améliorer la capacité d'un agent à raisonner sur le long terme et à accumuler des expériences.
+
+Il existe également différents formats de mémoire à considérer lors de la construction d'agents. Les formats de mémoire représentatifs incluent le langage naturel, les embeddings, les bases de données et les listes structurées, entre autres. Ceux-ci peuvent également être combinés, comme dans Ghost in the Minecraft ([GITM](https://arxiv.org/abs/2305.17144)) qui utilise une structure clé-valeur où les clés sont représentées par du langage naturel et les valeurs par des vecteurs d'embedding.
+
+Les modules de planification et de mémoire permettent à l'agent de fonctionner dans un environnement dynamique et de se rappeler efficacement des comportements passés et de planifier des actions futures.
+
+### Outils
+
+Les outils correspondent à un ensemble d'outils permettant à l'agent LLM d'interagir avec des environnements externes tels que l'API de recherche Wikipedia, l'interpréteur de code et le moteur de mathématiques. Les outils peuvent également inclure des bases de données, des bases de connaissances et des modèles externes. Lorsque l'agent interagit avec des outils externes, il exécute des tâches via des workflows qui aident l'agent à obtenir des observations ou des informations nécessaires pour accomplir des sous-tâches et satisfaire la requête de l'utilisateur. Dans notre requête initiale liée à la santé, un interpréteur de code est un exemple d'outil qui exécute du code et génère les informations graphiques nécessaires demandées par l'utilisateur.
+
+Les outils sont utilisés de différentes manières par les LLM :
+
+- [MRKL](https://arxiv.org/abs/2205.00445) est un cadre qui combine des LLM avec des modules experts qui sont soit des LLM, soit symboliques (comme une calculatrice ou une API météo).
+- [Toolformer](https://arxiv.org/abs/2302.04761) affine les LLM pour utiliser des API d'outils externes.
+- [Appel de Fonction](https://www.promptingguide.ai/applications/function_calling) - augmente les LLM avec une capacité d'utilisation d'outils qui implique de définir un ensemble d'API d'outils et de les fournir au modèle dans le cadre d'une requête.
+- [HuggingGPT](https://arxiv.org/abs/2303.17580) - un agent alimenté par LLM qui utilise des LLM comme planificateur de tâches pour connecter divers modèles d'IA existants (basés sur des descriptions) afin de résoudre des tâches d'IA.
+
+!["HuggingGPT"](../../img/agents/hugginggpt.png)
+
+## Applications des Agents LLM
+
+!["ChemCrow"](../../img/agents/chemcrow.png)
+*L'agent ChemCrow conçu pour accomplir des tâches dans la synthèse organique, la découverte de médicaments et la conception de matériaux. Source de l'image : Bran et al., 2023*
+
+Dans cette section, nous mettons en avant des exemples de domaines et d'études de cas où les agents basés sur les LLM ont été efficacement appliqués grâce à leurs capacités de raisonnement complexe et de compréhension du bon sens.
+
+### Agents LLM Notables
+
+- [Ma et al. (2023)](https://arxiv.org/abs/2307.15810) analysent l'efficacité des agents conversationnels pour le soutien au bien-être mental et constatent que l'agent peut aider les utilisateurs à faire face aux anxiétés, mais peut parfois produire un contenu nuisible.
+- [Horton (2023)](https://arxiv.org/abs/2301.07543) dote les agents basés sur LLM de préférences et de personnalités pour explorer les comportements économiques humains dans des scénarios simulés.
+- [Generative Agents](https://arxiv.org/abs/2304.03442) et [AgentSims](https://arxiv.org/abs/2308.04026) visent tous deux à simuler la vie quotidienne humaine dans une ville virtuelle en construisant plusieurs agents.
+- [Blind Judgement](https://arxiv.org/abs/2301.05327) utilise plusieurs modèles de langage pour simuler les processus de décision de plusieurs juges ; prédit les décisions de la Cour suprême du monde réel avec une précision supérieure à celle du hasard.
+- [Ziems et al. (2023)](https://arxiv.org/abs/2305.03514) présentent des agents capables d'assister les chercheurs dans des tâches telles que la génération de résumés, la rédaction de scripts et l'extraction de mots-clés.
+- [ChemCrow](https://arxiv.org/abs/2304.05376) est un agent LLM en chimie qui utilise des bases de données liées à la chimie pour planifier et exécuter de manière autonome les synthèses de répulsifs pour insectes, trois organocatalyseurs et la découverte guidée d'un nouveau chromophore.
+- [Boiko et al. (2023)] combine plusieurs LLM pour automatiser la conception, la planification et l'exécution d'expériences scientifiques.
+- [Math Agents]() assistent les chercheurs dans l'exploration, la découverte, la résolution et la preuve de problèmes mathématiques. [EduChat](https://arxiv.org/abs/2308.02773) et [CodeHelp](https://arxiv.org/abs/2308.06921) sont deux autres exemples notables d'agents LLM conçus pour l'éducation.
+- [Mehta et al. (2023)](https://arxiv.org/abs/2304.10750) proposent un cadre interactif permettant aux architectes humains d'interagir avec des agents d'IA pour construire des structures dans un environnement de simulation 3D.
+- [ChatDev](https://arxiv.org/abs/2307.07924), [ToolLLM](https://arxiv.org/abs/2307.16789), [MetaGPT](https://arxiv.org/abs/2308.00352) sont des exemples notables où les agents d'IA montrent un potentiel pour automatiser le codage, le débogage, les tests et assister dans d'autres tâches d'ingénierie logicielle.
+- [D-Bot](https://arxiv.org/abs/2308.05481) est un administrateur de base de données basé sur LLM qui acquiert en continu de l'expérience en maintenance de base de données et fournit des conseils de diagnostic et d'optimisation pour les bases de données.
+- [IELLM](https://arxiv.org/abs/2304.14354) applique les LLM pour relever les défis de l'industrie pétrolière et gazière.
+- [Dasgupta et al. 2023](https://arxiv.org/abs/2302.00763) présente un système d'agent unifié pour le raisonnement incarné et la planification de tâches.
+- [OS-Copilot](https://arxiv.org/abs/2402.07456) est un cadre pour construire des agents généralistes capables d'interagir avec des éléments complets dans un système d'exploitation (OS), y compris le web, les terminaux de code, les fichiers, les multimédias et diverses applications tierces.
+
+### Outils pour Agents LLM
+
+!["AutoGen"](../../img/agents/autogen.png)
+*Capacités d'AutoGen ; Source de l'image : https://microsoft.github.io/autogen*
+
+Voici des exemples notables d'outils et de cadres utilisés pour construire des agents LLM :
+
+- [LangChain](https://python.langchain.com/docs/get_started/introduction) : un cadre pour développer des applications et des agents alimentés par des modèles de langage.
+- [AutoGPT](https://github.com/Significant-Gravitas/AutoGPT) : fournit des outils pour construire des agents d'IA.
+- [Langroid](https://github.com/langroid/langroid) : Simplifie la construction d'applications LLM avec la programmation multi-agents : les agents comme citoyens de première classe, collaborant sur des tâches via des messages.
+- [AutoGen](https://microsoft.github.io/autogen/) : un cadre permettant le développement d'applications LLM utilisant plusieurs agents pouvant converser entre eux pour résoudre des tâches.
+- [OpenAgents](https://github.com/xlang-ai/OpenAgents) : une plateforme ouverte pour utiliser et héberger des agents de langage dans le monde réel.
+- [LlamaIndex](https://www.llamaindex.ai/) - un cadre pour connecter des sources de données personnalisées à de grands modèles de langage.
+- [GPT Engineer](https://github.com/gpt-engineer-org/gpt-engineer) : automatise la génération de code pour accomplir des tâches de développement.
+- [DemoGPT](https://github.com/melih-unsal/DemoGPT) : agent d'IA autonome pour créer des applications Streamlit interactives.
+- [GPT Researcher](https://github.com/assafelovic/gpt-researcher) : un agent autonome conçu pour effectuer des recherches en ligne complètes sur diverses tâches.
+- [AgentVerse](https://github.com/OpenBMB/AgentVerse) : conçu pour faciliter le déploiement de plusieurs agents basés sur LLM dans diverses applications.
+- [Agents](https://github.com/aiwaves-cn/agents) : une bibliothèque/cadre open-source pour construire des agents de langage autonomes. La bibliothèque supporte des fonctionnalités incluant la mémoire à court et long terme, l'utilisation d'outils, la navigation web, la communication multi-agents, et de nouvelles fonctionnalités incluant l'interaction humain-agent et le contrôle symbolique.
+- [BMTools](https://github.com/OpenBMB/BMTools) : étend les modèles de langage en utilisant des outils et sert de plateforme pour la communauté afin de construire et partager des outils.
+- [crewAI](https://www.crewai.io/) : cadre d'agent d'IA repensé pour les ingénieurs, offrant des capacités puissantes avec simplicité pour construire des agents et des automatisations.
+- [Phidata](https://github.com/phidatahq/phidata) : une boîte à outils pour construire des assistants d'IA en utilisant l'appel de fonctions.
+
+## Évaluation des Agents LLM
+
+![""](../../img/agents/agentbench.png)
+*Benchmark AgentBench pour évaluer les agents LLM sur des défis du monde réel et 8 environnements différents. Source de l'image : Liu et al. 2023*
+
+Similaire à l'évaluation des LLM eux-mêmes, l'évaluation des agents LLM est une tâche difficile. Selon Wang et al., (2023), les méthodes d'évaluation courantes incluent :
+
+- **Annotation Humaine** : Inclut des évaluateurs humains qui notent directement les résultats des LLM sur différents aspects importants dans l'application, tels que l'honnêteté, l'utilité, l'engagement, l'impartialité, et plus encore.
+- **Test de Turing** : Les évaluateurs humains sont invités à comparer les résultats de vrais humains et d'agents, où des résultats indiscernables signifient que les agents peuvent atteindre des performances humaines.
+- **Métriques** : Ce sont des métriques soigneusement conçues qui reflètent la qualité des agents. Les métriques notables incluent les métriques de succès des tâches, les métriques de similarité humaine et les métriques d'efficacité.
+- **Protocoles** : Correspondent à des protocoles d'évaluation courants qui déterminent comment les métriques sont utilisées. Les exemples incluent la simulation du monde réel, l'évaluation sociale, l'évaluation multi-tâches et les tests logiciels.
+- **Benchmarks** : Plusieurs benchmarks ont été conçus pour évaluer les agents LLM. Des exemples notables incluent [ALFWorld](https://alfworld.github.io/), [IGLU](https://arxiv.org/abs/2304.10750), [Tachikuma](https://arxiv.org/abs/2307.12573), [AgentBench](https://github.com/THUDM/AgentBench), [SocKET](https://arxiv.org/abs/2305.14938), [AgentSims](https://arxiv.org/abs/2308.04026), [ToolBench](https://arxiv.org/abs/2305.16504), [WebShop](https://arxiv.org/abs/2207.01206), [Mobile-Env](https://github.com/stefanbschneider/mobile-env), [WebArena](https://github.com/web-arena-x/webarena), [GentBench](https://arxiv.org/abs/2308.04030), [RocoBench](https://project-roco.github.io/), [EmotionBench](https://project-roco.github.io/), [PEB](https://arxiv.org/abs/2308.06782), [ClemBench](https://arxiv.org/abs/2305.13455), et [E2E](https://arxiv.org/abs/2308.04624).
+
+## Défis
+
+Les agents LLM en sont encore à leurs débuts, donc de nombreux défis et limitations subsistent lors de leur construction :
+
+- **Capacité de jouer un rôle** : Les agents basés sur LLM doivent généralement adopter un rôle pour accomplir efficacement des tâches dans un domaine. Pour les rôles que le LLM ne caractérise pas bien, il est possible d'affiner le LLM sur des données représentant des rôles peu communs ou des personnages psychologiques.
+- **Planification à long terme et longueur de contexte finie** : La planification sur une longue histoire reste un défi pouvant entraîner des erreurs dont l'agent pourrait ne pas se remettre. Les LLM sont également limités dans la longueur de contexte qu'ils peuvent supporter, ce qui pourrait entraîner des contraintes limitant les capacités de l'agent, comme l'utilisation de la mémoire à court terme.
+- **Alignement généralisé avec les valeurs humaines** : Il est également difficile d'aligner les agents avec des valeurs humaines diverses, ce qui est également courant avec les LLM standards. Une solution potentielle implique le réalignement possible du LLM en concevant des stratégies d'invite avancées.
+- **Robustesse et fiabilité des invites** : Un agent LLM peut impliquer plusieurs invites conçues pour alimenter les différents modules comme la mémoire et la planification. Il est courant de rencontrer des problèmes de fiabilité dans les LLM avec même les plus légers changements dans les invites. Les agents LLM impliquent un cadre d'invite entier, ce qui les rend plus sujets à des problèmes de robustesse. Les solutions potentielles incluent la création d'éléments d'invite par essais et erreurs, l'optimisation/ajustement automatique des invites, ou la génération automatique d'invites en utilisant GPT. Un autre problème courant avec les LLM est l'hallucination, qui est également prévalente avec les agents LLM. Ces agents dépendent du langage naturel pour interagir avec des composants externes pouvant introduire des informations conflictuelles, entraînant des hallucinations et des problèmes de factualité.
+- **Limite des connaissances** : De manière similaire aux problèmes de non-correspondance des connaissances pouvant entraîner des hallucinations ou des problèmes de factualité, il est difficile de contrôler l'étendue des connaissances des LLM, ce qui peut significativement affecter l'efficacité des simulations. Concrètement, les connaissances internes d'un LLM pourraient introduire des biais ou utiliser des connaissances inconnues de l'utilisateur, ce qui pourrait affecter le comportement de l'agent lorsqu'il opère dans des environnements spécifiques.
+- **Efficacité** : Les agents LLM impliquent un nombre important de requêtes traitées par le LLM, ce qui pourrait affecter l'efficacité des actions de l'agent car cela dépendrait fortement de la vitesse d'inférence du LLM. Le coût est également une préoccupation lors du déploiement de plusieurs agents.
+
+## Références
+
+- [Agents Autonomes Alimentés par LLM](https://lilianweng.github.io/posts/2023-06-23-agent/)
+- [Systèmes MRKL : Une architecture modulaire, neuro-symbolique qui combine de grands modèles de langage, des sources de connaissances externes et un raisonnement discret](https://arxiv.org/abs/2205.00445)
+- [Une Étude sur les Agents Autonomes Basés sur les Grands Modèles de Langage](https://arxiv.org/abs/2308.11432)
+- [L'Émergence et le Potentiel des Agents Basés sur les Grands Modèles de Langage : Une Étude](https://arxiv.org/abs/2309.07864)
+- [Agents Multiples Basés sur les Grands Modèles de Langage : Une Étude des Progrès et des Défis](https://arxiv.org/abs/2402.01680)
+- [Architectures Cognitives pour les Agents de Langage](https://arxiv.org/abs/2309.02427)
+- [Introduction aux Agents LLM](https://developer.nvidia.com/blog/introduction-to-llm-agents/)
+- [Agents LangChain](https://python.langchain.com/docs/use_cases/tool_use/agents)
+- [Construire Votre Première Application d'Agent LLM](https://developer.nvidia.com/blog/building-your-first-llm-agent-application/)
+- [Construire des Applications LLM pour la Production](https://huyenchip.com/2023/04/11/llm-engineering.html#control_flow_with_llm_agents)
+- [Agents LLM Impressionnants](https://github.com/kaushikb11/awesome-llm-agents)
+- [Agent Alimenté par LLM Impressionnant](https://github.com/hyp1231/awesome-llm-powered-agent#awesome-llm-powered-agent)
+- [Fonctions, Outils et Agents avec LangChain](https://www.deeplearning.ai/short-courses/functions-tools-agents-langchain/)
